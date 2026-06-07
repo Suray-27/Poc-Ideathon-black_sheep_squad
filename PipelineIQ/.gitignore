@@ -39,8 +39,8 @@ wheels/
 *~
 
 # Data files (store locally, not in git)
-**/data/*.db
-**/data/*.csv
+data/*.db
+data/*.csv
 *.sqlite
 *.sqlite3
 
