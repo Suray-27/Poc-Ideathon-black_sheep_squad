@@ -3,6 +3,18 @@ import sqlite3
 import pandas as pd
 from crewai import Agent, Task, Crew, Process
 from crewai.tools import tool
+from dotenv import load_dotenv
+
+# -------------------------------------------------------------
+# STEP 0: Set API Credentials Explicitly
+# -------------------------------------------------------------
+load_dotenv()
+
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+if not gemini_api_key:
+    raise ValueError("❌ CRITICAL: GEMINI_API_KEY not found. Please verify your .env configuration file.")
+
+os.environ["GEMINI_API_KEY"] = gemini_api_key
 
 # Initialize Gemini (Using 1.5 Pro for stable structured reasoning and SQL)
 gemini_llm = "gemini/gemini-2.5-flash"
