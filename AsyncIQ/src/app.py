@@ -9,7 +9,10 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-load_dotenv()
+# Load .env from config directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ENV_FILE = os.path.join(BASE_DIR, "config", ".env")
+load_dotenv(ENV_FILE)
 
 # 🔒 BYPASS CORPORATE FIREWALL: Disable strict SSL verification
 os.environ["PYTHONHTTPSVERIFY"] = "0"
@@ -19,9 +22,17 @@ ssl._create_default_https_context = ssl._create_unverified_context
 # Tokens & Paths
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_FILE = os.path.join(BASE_DIR, "db.json")
+# Validate tokens
+if not SLACK_BOT_TOKEN:
+    raise ValueError("⚠️ SLACK_BOT_TOKEN not found in .env file")
+if not SLACK_APP_TOKEN:
+    raise ValueError("⚠️ SLACK_APP_TOKEN not found in .env file")
+if not GEMINI_API_KEY:
+    raise ValueError("⚠️ GEMINI_API_KEY not found in .env file")
+
+DB_FILE = os.path.join(BASE_DIR, "data", "db.json")
 
 # Initialize the local JSON database file
 if not os.path.exists(DB_FILE):
