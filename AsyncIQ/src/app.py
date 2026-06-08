@@ -152,9 +152,9 @@ def handle_pulse_command(ack, command, say, respond):
         # Try Option C: Standard legacy fallback string format
         if not report_text:
             try:
-                print("🤖 2.5 failed. Trying stable gemini-1.5-flash...")
+                print("🤖 2.5 failed. Trying stable models/gemini-2.5-pro...")
                 response = client.models.generate_content(
-                    model='gemini-1.5-flash',
+                    model='models/gemini-2.5-pro',
                     contents=user_content,
                     config=types.GenerateContentConfig(system_instruction=system_instruction, temperature=0.3)
                 )
@@ -164,9 +164,9 @@ def handle_pulse_command(ack, command, say, respond):
 
         # Try Option D: Prefixed legacy fallback string format
         if not report_text:
-            print("🤖 1.5 standard failed. Trying models/gemini-1.5-flash...")
+            print("🤖 2.5 standard failed. Trying models/gemini-2.5-flash-lite...")
             response = client.models.generate_content(
-                model='models/gemini-1.5-flash',
+                model='models/gemini-2.5-flash-lite',
                 contents=user_content,
                 config=types.GenerateContentConfig(system_instruction=system_instruction, temperature=0.3)
             )
