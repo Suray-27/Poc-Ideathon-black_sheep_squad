@@ -9,14 +9,15 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
+load_dotenv()
+
 # Load .env from config directory
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(SRC_DIR)
 ENV_FILE = os.path.join(BASE_DIR, "config", ".env")
 load_dotenv(ENV_FILE)
 
-
-# 🔒 BYPASS CORPORATE FIREWALL: Disable strict SSL verification
+# 🔒 BYPASS CORPORATE FIREWALL: Disable strict global SSL verification
 os.environ["PYTHONHTTPSVERIFY"] = "0"
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -118,10 +119,9 @@ def handle_pulse_command(ack, command, say, respond):
     )
     user_content = f"Here are the raw team updates for today:\n\n{formatted_updates}"
 
-    # 4. Generate the report with Gemini (with bulletproof naming fallbacks)
+   # 4. Generate the report with Gemini (with bulletproof naming fallbacks)
     try:
-        # CRITICAL FIX: Explicitly hand the key to the client constructor
-        client = genai.Client(api_key=GEMINI_API_KEY)
+        client = genai.Client()
         report_text = None
         
         # Try Option A: Standard modern string format
@@ -133,8 +133,8 @@ def handle_pulse_command(ack, command, say, respond):
                 config=types.GenerateContentConfig(system_instruction=system_instruction, temperature=0.3)
             )
             report_text = response.text
-        except Exception as e_a:
-            print(f"Option A skipped: {e_a}") 
+        except Exception:
+            pass # Move to next attempt if it fails
             
         # Try Option B: Prefixed modern string format
         if not report_text:
@@ -146,8 +146,8 @@ def handle_pulse_command(ack, command, say, respond):
                     config=types.GenerateContentConfig(system_instruction=system_instruction, temperature=0.3)
                 )
                 report_text = response.text
-            except Exception as e_b:
-                print(f"Option B skipped: {e_b}")
+            except Exception:
+                pass
 
         # Try Option C: Standard legacy fallback string format
         if not report_text:
@@ -159,37 +159,42 @@ def handle_pulse_command(ack, command, say, respond):
                     config=types.GenerateContentConfig(system_instruction=system_instruction, temperature=0.3)
                 )
                 report_text = response.text
-            except Exception as e_c:
-                print(f"Option C skipped: {e_c}")
+            except Exception:
+                pass
 
         # Try Option D: Prefixed legacy fallback string format
         if not report_text:
-            try:
-                print("🤖 1.5 standard failed. Trying models/gemini-1.5-flash...")
-                response = client.models.generate_content(
-                    model='models/gemini-1.5-flash',
-                    contents=user_content,
-                    config=types.GenerateContentConfig(system_instruction=system_instruction, temperature=0.3)
-                )
-                report_text = response.text
-            except Exception as e_d:
-                print(f"Option D skipped: {e_d}")
+            print("🤖 1.5 standard failed. Trying models/gemini-1.5-flash...")
+            response = client.models.generate_content(
+                model='models/gemini-1.5-flash',
+                contents=user_content,
+                config=types.GenerateContentConfig(system_instruction=system_instruction, temperature=0.3)
+            )
+            report_text = response.text
 
-        # 5. Only broadcast and clear the database if report generation succeeded
-    if report_text:
+        # 5. BROADCAST IT! Post the final report into the public Slack channel
         header = "📊 *ASYNC IQ DAILY TEAM PULSE REPORT* 📊\n\n"
         say(text=f"{header}{report_text}", channel=current_channel)
 
-        # Clears database ONLY when message is pushed out successfully
+        # 6. Clear out the database file for the next working session/day
         with open(DB_FILE, "w") as f:
             json.dump([], f, indent=2)
-        print("🗑️ Database successfully cleared for next standup cycle.")
-    else:
-        raise ValueError("All Gemini model string connection attempts returned empty results. Check your API key access parameters.")
-        
+            
     except Exception as e:
         print(f"❌ Gemini Error during delivery: {e}")
-        respond(f"⚠️ Failed to compile AI report. Your data was safely preserved in the database. Error: {e}")
+        respond(f"⚠️ Failed to compile AI report after testing all variations: {e}")
+
+        # 5. BROADCAST IT! Post the final report into the public Slack channel
+        header = "📊 *ASYNC IQ DAILY TEAM PULSE REPORT* 📊\n\n"
+        say(text=f"{header}{report_text}", channel=current_channel)
+
+        # 6. Clear out the database file for the next working session/day
+        with open(DB_FILE, "w") as f:
+            json.dump([], f, indent=2)
+            
+    except Exception as e:
+        print(f"❌ Gemini Error during delivery: {e}")
+        respond(f"⚠️ Failed to compile AI report: {e}")
 
 
 if __name__ == "__main__":
