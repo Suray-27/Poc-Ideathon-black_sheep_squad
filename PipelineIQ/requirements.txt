@@ -1,0 +1,6 @@
+google-genai
+pandas
+python-dotenv
+tabulate
+# Optional: only needed if you ingest .xlsx/.xls source files
+openpyxl

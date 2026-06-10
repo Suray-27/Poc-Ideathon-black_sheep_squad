@@ -41,6 +41,7 @@ wheels/
 # Data files (store locally, not in git)
 **/data/*.db
 **/data/*.csv
+**/data/pipelines/
 *.sqlite
 *.sqlite3
 

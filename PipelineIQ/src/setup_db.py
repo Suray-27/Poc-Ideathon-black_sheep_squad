@@ -1,7 +1,22 @@
+import os
+import sys
+import csv
 import sqlite3
 
+# Make emoji-rich output safe on Windows consoles (cp1252 can't encode them).
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(SRC_DIR)
+DB_PATH = os.path.join(BASE_DIR, "data", "source_warehouse.db")
+SOURCES_DIR = os.path.join(BASE_DIR, "data", "sources")
+
 def create_mock_data():
-    conn = sqlite3.connect('source_warehouse.db')
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     # Create Users Table
@@ -41,7 +56,28 @@ def create_mock_data():
 
     conn.commit()
     conn.close()
-    print("✅ Mock source database created successfully as 'source_warehouse.db'")
+    print(f"✅ Mock source database created successfully at '{DB_PATH}'")
+
+
+def create_sample_source_file():
+    """Seed an external source file so the 'load from a file' path is demoable."""
+    os.makedirs(SOURCES_DIR, exist_ok=True)
+    products_path = os.path.join(SOURCES_DIR, "products.csv")
+
+    # order_id links back to the orders table so the AI can join file → DB tables.
+    rows = [
+        ("order_id", "product_name", "category", "unit_price"),
+        (101, "Wireless Mouse", "Electronics", 29.99),
+        (102, "Coffee Mug", "Kitchen", 12.50),
+        (103, "Notebook", "Stationery", 5.25),
+        (104, "Desk Lamp", "Home", 34.00),
+    ]
+    with open(products_path, "w", newline="", encoding="utf-8") as f:
+        csv.writer(f).writerows(rows)
+
+    print(f"✅ Sample source file created at '{products_path}'")
+
 
 if __name__ == '__main__':
     create_mock_data()
+    create_sample_source_file()
